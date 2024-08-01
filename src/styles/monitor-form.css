@@ -75,6 +75,15 @@
     }
   }
   
+  /* Add this to your CSS file */
+.highlighted {
+  border: 2px solid #4a90e2; /* Highlight border color */
+  background-color: #f0f8ff; /* Optional background color */
+  box-shadow: 0 0 5px rgba(0, 0, 255, 0.5); /* Optional shadow effect */
+}
+
+
+
 
 html, body {
     display: flex;
