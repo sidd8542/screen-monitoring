@@ -7,14 +7,13 @@ const path  = require('path')
 
 // Create an Express app
 const app = express();
-const port = 5000;
+const port = 8080;
 
 // Create an HTTP server
 const server = http.createServer(app);
 
 // Create a WebSocket server
 const wss = new WebSocket.Server({ server });
-
 
 let clients = [];
 
