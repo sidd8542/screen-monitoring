@@ -40,7 +40,8 @@ const FormScreen: React.FC = () => {
     mouseY = 0;
 
   useEffect(() => {
-    socket.current = new WebSocket("ws://localhost:8080");
+    // socket.current = new WebSocket("ws://localhost:8080");
+    socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
 
     socket.current.onopen = () => {
       console.log("WebSocket connection established");
@@ -60,7 +61,6 @@ const FormScreen: React.FC = () => {
       }
     };
   }, []);
-  
 
   const sendTrackingData = (updatedFormData?: FormData, cursorAction?: string) => {
     if (!socket.current || socket.current.readyState !== WebSocket.OPEN) return;

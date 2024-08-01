@@ -4,7 +4,7 @@ import "../styles/monitor-form.css";
 interface CursorData {
   x: number;
   y: number;
-  action?: "animation-left-click" | "animation-right-click";
+  action?: "animation-left-click" | "animation-right-click" | "dropdown-open";
 }
 
 interface FormData {
@@ -41,7 +41,9 @@ const MonitorScreen: React.FC = () => {
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    socket.current = new WebSocket("ws://localhost:8080");
+    // socket.current = new WebSocket("ws://localhost:8080");
+    socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
+
     socket.current.onopen = () => {
       console.log("WebSocket connection established");
     };
@@ -87,7 +89,15 @@ const MonitorScreen: React.FC = () => {
   }, [inputSessionId, sessionId]);
 
   const handleData = (data: TrackingData) => {
-    console.log("Received data:", data, "<>", inputSessionId, "<>", sessionId);
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      date: "",
+      time: "",
+      service: "",
+      message: "",
+    });
     if (data.sessionId === sessionId || data.sessionId === inputSessionId) {
       if (data.cursor) {
         setCursors((prevCursors) => ({
@@ -104,7 +114,6 @@ const MonitorScreen: React.FC = () => {
       setSessionError("Invalid session ID or no active session.");
     }
   };
-  
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputSessionId(event.target.value);
@@ -112,14 +121,20 @@ const MonitorScreen: React.FC = () => {
 
   const handleSessionIdSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log(inputSessionId);
-
     setSessionId(inputSessionId);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
   };
 
   return (
     <div
-      className="flex justify-center items-center h-full max-w-md mx-auto bg-white mt-20 shadow-lg rounded-lg overflow-hidden"
+      className="flex justify-center items-center h-full max-w-md mx-auto bg-white mt-10 shadow-lg rounded-lg overflow-hidden"
     >
       {!isAuthorized ? (
         <div>
@@ -149,7 +164,7 @@ const MonitorScreen: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="flex flex-col justify-center items-center shadow-lg w-full p-5 bg-white  rounded-lg overflow-hidden">
+          <div className="flex flex-col justify-center items-center shadow-lg w-full p-5 bg-white rounded-lg overflow-hidden">
             <div className="text-2xl py-4 px-6 bg-gray-900 text-white rounded-lg text-center font-bold uppercase">
               Book an Appointment
             </div>
@@ -157,10 +172,10 @@ const MonitorScreen: React.FC = () => {
               <p>Active Session ID: {sessionId}</p>
             </div>
             <form className="shadow-b w-full py-4 px-6">
-            <div className="form-group mb-4">
-          <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
-            Name
-          </label>
+              <div className="form-group mb-4">
+                <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
+                  Name
+                </label>
                 <input
                   type="text"
                   id="name"
@@ -171,8 +186,9 @@ const MonitorScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group mb-4">
-              <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
-                    Email</label>
+                <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
+                  Email
+                </label>
                 <input
                   type="email"
                   id="email"
@@ -183,7 +199,9 @@ const MonitorScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group mb-4">
-              <label htmlFor="phone" className="block text-gray-700 font-bold mb-2">Phone Number</label>
+                <label htmlFor="phone" className="block text-gray-700 font-bold mb-2">
+                  Phone Number
+                </label>
                 <input
                   type="tel"
                   id="phone"
@@ -194,18 +212,22 @@ const MonitorScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group mb-4">
-              <label htmlFor="date" className="block text-gray-700 font-bold mb-2">Date</label>
+                <label htmlFor="date" className="block text-gray-700 font-bold mb-2">
+                  Date
+                </label>
                 <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={formData.date}
-                  readOnly
-                  className="form-control"
-                />
+            type="date"
+            id="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            className="form-control"
+          />
               </div>
               <div className="form-group mb-4">
-              <label htmlFor="time" className="block text-gray-700 font-bold mb-2">Time</label>
+                <label htmlFor="time" className="block text-gray-700 font-bold mb-2">
+                  Time
+                </label>
                 <input
                   type="time"
                   id="time"
@@ -216,7 +238,9 @@ const MonitorScreen: React.FC = () => {
                 />
               </div>
               <div className="form-group mb-4">
-              <label htmlFor="service" className="block text-gray-700 font-bold mb-2">Service</label>
+                <label htmlFor="service" className="block text-gray-700 font-bold mb-2">
+                  Service
+                </label>
                 <select
                   id="service"
                   name="service"
@@ -234,14 +258,16 @@ const MonitorScreen: React.FC = () => {
                 </select>
               </div>
               <div className="form-group mb-4">
-              <label htmlFor="message" className="block text-gray-700 font-bold mb-2">Message</label>
+                <label htmlFor="message" className="block text-gray-700 font-bold mb-2">
+                  Message
+                </label>
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   readOnly
                   className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
+                />
               </div>
             </form>
           </div>
@@ -252,7 +278,6 @@ const MonitorScreen: React.FC = () => {
               style={{
                 left: `${cursors[key].x}px`,
                 top: `${cursors[key].y}px`,
-                borderRadius: "50%",
               }}
             />
           ))}
