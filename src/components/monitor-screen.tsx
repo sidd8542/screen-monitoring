@@ -48,6 +48,7 @@ const MonitorScreen: React.FC = () => {
       console.log("WebSocket connection established");
     };
 
+    
     socket.current.onclose = () => {
       console.log("WebSocket connection closed");
     };
