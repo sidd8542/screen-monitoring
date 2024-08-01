@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
 import "../styles/monitor-form.css";
+import React, { useEffect, useState, useRef } from "react";
 
 interface CursorData {
   x: number;
@@ -41,14 +41,14 @@ const MonitorScreen: React.FC = () => {
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // socket.current = new WebSocket("ws://localhost:8080");
-    socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
+    socket.current = new WebSocket("ws://localhost:8080");
+
+    // socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
 
     socket.current.onopen = () => {
       console.log("WebSocket connection established");
     };
 
-    
     socket.current.onclose = () => {
       console.log("WebSocket connection closed");
     };
@@ -134,24 +134,24 @@ const MonitorScreen: React.FC = () => {
   };
 
   return (
-    <div
-      className="flex justify-center items-center h-full max-w-md mx-auto bg-white mt-10 shadow-lg rounded-lg overflow-hidden"
-    >
+    <div className="flex flex-col justify-center items-center h-full max-w-md mx-auto bg-white mt-10 shadow-lg rounded-lg overflow-hidden md:max-w-lg lg:max-w-xl">
       {!isAuthorized ? (
         <div>
           <form
             onSubmit={handleSessionIdSubmit}
             className="flex flex-col w-full m-5 justify-center items-center h-full"
           >
-            <div className="form-group">
-              <label htmlFor="sessionId">Enter Session ID:</label>
+            <div className="form-group mb-4 w-full">
+              <label htmlFor="sessionId" className="block text-gray-700 font-bold mb-2">
+                Enter Session ID:
+              </label>
               <input
                 type="text"
                 id="sessionId"
                 value={inputSessionId}
                 onChange={handleInputChange}
                 placeholder="Enter session ID"
-                className="form-control"
+                className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />
             </div>
             <button
@@ -160,7 +160,7 @@ const MonitorScreen: React.FC = () => {
             >
               Submit
             </button>
-            {sessionError && <p className="error-message">{sessionError}</p>}
+            {sessionError && <p className="error-message text-red-500 mt-2">{sessionError}</p>}
           </form>
         </div>
       ) : (
@@ -182,8 +182,9 @@ const MonitorScreen: React.FC = () => {
                   id="name"
                   name="name"
                   value={formData.name}
+                  placeholder="Enter your name"
                   readOnly
-                  className="form-control"
+                  className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 />
               </div>
               <div className="form-group mb-4">
@@ -196,7 +197,8 @@ const MonitorScreen: React.FC = () => {
                   name="email"
                   value={formData.email}
                   readOnly
-                  className="form-control"
+                  placeholder="Enter your email"
+                  className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 />
               </div>
               <div className="form-group mb-4">
@@ -207,9 +209,10 @@ const MonitorScreen: React.FC = () => {
                   type="tel"
                   id="phone"
                   name="phone"
+                  placeholder="Enter your phone number"
                   value={formData.phone}
                   readOnly
-                  className="form-control"
+                  className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 />
               </div>
               <div className="form-group mb-4">
@@ -217,13 +220,14 @@ const MonitorScreen: React.FC = () => {
                   Date
                 </label>
                 <input
-            type="date"
-            id="date"
-            name="date"
-            value={formData.date}
-            onChange={handleChange}
-            className="form-control"
-          />
+                  type="date"
+                  id="date"
+                  name="date"
+                  readOnly
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                />
               </div>
               <div className="form-group mb-4">
                 <label htmlFor="time" className="block text-gray-700 font-bold mb-2">
@@ -235,7 +239,7 @@ const MonitorScreen: React.FC = () => {
                   name="time"
                   value={formData.time}
                   readOnly
-                  className="form-control"
+                  className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 />
               </div>
               <div className="form-group mb-4">
@@ -246,7 +250,7 @@ const MonitorScreen: React.FC = () => {
                   id="service"
                   name="service"
                   value={formData.service}
-                  className="form-control"
+                  className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   disabled
                 >
                   <option value="" disabled>
@@ -264,12 +268,21 @@ const MonitorScreen: React.FC = () => {
                 </label>
                 <textarea
                   id="message"
+                  placeholder="Enter any additional information"
                   name="message"
                   value={formData.message}
                   readOnly
                   className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 />
               </div>
+              <div className="flex items-center justify-center mb-4">
+          <button disabled
+            className="bg-gray-700 text-white py-2 px-4 rounded cursor-not-allowed focus:outline-none focus:shadow-outline"
+            type="submit"
+          >
+            Book Appointment
+          </button>
+        </div>
             </form>
           </div>
           {Object.keys(cursors).map((key) => (

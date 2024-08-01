@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import "../styles/monitor-form.css";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface CursorData {
   x: number;
   y: number;
-  action: any
+  action: any;
 }
 
 interface FormData {
@@ -40,8 +42,8 @@ const FormScreen: React.FC = () => {
     mouseY = 0;
 
   useEffect(() => {
-    // socket.current = new WebSocket("ws://localhost:8080");
-    socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
+    socket.current = new WebSocket("ws://localhost:8080");
+    // socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
 
     socket.current.onopen = () => {
       console.log("WebSocket connection established");
@@ -64,13 +66,13 @@ const FormScreen: React.FC = () => {
 
   const sendTrackingData = (updatedFormData?: FormData, cursorAction?: string) => {
     if (!socket.current || socket.current.readyState !== WebSocket.OPEN) return;
-  
+
     const trackingData: TrackingData = {
       sessionId,
       cursor: { x: mouseX, y: mouseY, action: cursorAction },
       formData: updatedFormData || formData,
     };
-  
+
     socket.current.send(JSON.stringify(trackingData));
   };
 
@@ -80,15 +82,15 @@ const FormScreen: React.FC = () => {
       mouseY = event.clientY;
       sendTrackingData();
     };
-  
+
     const handleClick = (event: MouseEvent) => {
       const action = event.button === 0 ? "animation-left-click" : "animation-right-click";
       sendTrackingData(undefined, action);
     };
-  
+
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("click", handleClick);
-  
+
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("click", handleClick);
@@ -111,15 +113,22 @@ const FormScreen: React.FC = () => {
     sendTrackingData(newFormData);
   };
 
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // Perform form submission logic here (e.g., send data to server)
+    toast.success("Appointment booked successfully!");
+  };
+
   return (
-    <div className="flex flex-col justify-center items-center w-full max-w-md mx-auto mt-10 bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="flex flex-col justify-center items-center w-full max-w-md mx-auto mt-10 bg-white shadow-lg rounded-lg overflow-hidden md:max-w-lg lg:max-w-xl xl:max-w-2xl">
       <div className="text-2xl rounded-lg py-4 px-6 bg-gray-900 text-white text-center font-bold uppercase">
         Book an Appointment
       </div>
       <div className="session-info py-2 px-6">
         <p>Session ID: {sessionId}</p>
       </div>
-      <form className="shadow-b w-full py-4 px-6" action="" method="POST">
+      <form className="shadow-b w-full py-4 px-6" action="" method="POST" onSubmit={handleSubmit}>
         <div className="form-group mb-4">
           <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
             Name
@@ -228,7 +237,7 @@ const FormScreen: React.FC = () => {
           />
         </div>
         <div className="flex items-center justify-center mb-4">
-          <button
+        <button
             className="bg-gray-900 text-white py-2 px-4 rounded hover:bg-gray-800 focus:outline-none focus:shadow-outline"
             type="submit"
           >
@@ -236,6 +245,7 @@ const FormScreen: React.FC = () => {
           </button>
         </div>
       </form>
+      <ToastContainer />
     </div>
   );
 };
