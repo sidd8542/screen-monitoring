@@ -1,57 +1,57 @@
-{/* <>Screen monitor by admin and access by sessionId</> */}
+// {/* <>Screen monitor by admin and access by sessionId</> */}
 
-const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-const path  = require('path')
+// const express = require('express');
+// const http = require('http');
+// const WebSocket = require('ws');
+// const path  = require('path')
 
-// Create an Express app
-const app = express();
-const port = 8080;
+// // Create an Express app
+// const app = express();
+// const port = 8080;
 
-// Create an HTTP server
-const server = http.createServer(app);
+// // Create an HTTP server
+// const server = http.createServer(app);
 
-// Create a WebSocket server
-const wss = new WebSocket.Server({ server });
+// // Create a WebSocket server
+// const wss = new WebSocket.Server({ server });
 
-let clients = [];
+// let clients = [];
 
-app.use(express.static(path.join(__dirname, 'build')));
+// app.use(express.static(path.join(__dirname, 'build')));
 
-wss.on('connection', (ws) => {
-    clients.push(ws);
-    console.log('Client connected');
+// wss.on('connection', (ws) => {
+//     clients.push(ws);
+//     console.log('Client connected');
 
-    ws.on('message', (message) => {
-        console.log(`Received: ${message}`);
-        // Broadcast the received message to all clients
-        clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
-    });
+//     ws.on('message', (message) => {
+//         console.log(`Received: ${message}`);
+//         // Broadcast the received message to all clients
+//         clients.forEach(client => {
+//             if (client.readyState === WebSocket.OPEN) {
+//                 client.send(message);
+//             }
+//         });
+//     });
 
-    ws.on('close', () => {
-        clients = clients.filter(client => client !== ws);
-        console.log('Client disconnected');
-    });
-});
+//     ws.on('close', () => {
+//         clients = clients.filter(client => client !== ws);
+//         console.log('Client disconnected');
+//     });
+// });
 
-// Define a route for the Express app
-app.get('/', (req, res) => {
-    res.send('WebSocket server is running');
-});
+// // Define a route for the Express app
+// app.get('/', (req, res) => {
+//     res.send('WebSocket server is running');
+// });
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
+// app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 
-// Start the server
-server.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+// // Start the server
+// server.listen(port, () => {
+//     console.log(`Server is running on http://localhost:${port}`);
+// });
 
 
 
@@ -147,3 +147,44 @@ server.listen(port, () => {
 // }
 
 // console.log('Signaling server running on port 8080');
+
+
+
+
+{/* <>Chatting Module</> */}
+
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('A user connected');
+
+  socket.on('join_session', (sessionId) => {
+    socket.join(sessionId);
+    console.log(`User joined session: ${sessionId}`);
+  });
+
+  socket.on('send_message', (data) => {
+    console.log('Sending message to session:', data.sessionId, data);
+    io.to(data.sessionId).emit('receive_message', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('A user disconnected');
+  });
+});
+
+server.listen(8080, () => {
+  console.log('Server is running on port 8080');
+});
+

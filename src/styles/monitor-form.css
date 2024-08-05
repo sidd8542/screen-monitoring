@@ -47,7 +47,7 @@
 /* Define the custom cursor style */
 .cursor {
     position: absolute;
-    background-image: url('../../public//icons8-cursor-32.png'); 
+    background-image: url('../../public/icons8-cursor-32.png'); 
     background-size: cover;
     width: 22px;
     height: 22px;

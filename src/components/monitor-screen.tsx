@@ -2,6 +2,7 @@ import "../styles/monitor-form.css";
 import React, { useEffect, useState, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaPlay, FaStop, FaClock } from 'react-icons/fa';
 
 interface CursorData {
   x: number;
@@ -49,11 +50,16 @@ const MonitorScreen: React.FC = () => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const [timer, setTimer] = useState<number>(0);
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   const socket = useRef<WebSocket | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [recordingError, setRecordingError] = useState('')
 
   useEffect(() => {
     socket.current = new WebSocket("ws://localhost:8080");
+    // socket.current = new WebSocket("wss://7bb8-2409-40e3-4d-83b6-2878-bc74-ddb3-5403.ngrok-free.app");
+
     // socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
 
     socket.current.onopen = () => {
@@ -112,7 +118,18 @@ const MonitorScreen: React.FC = () => {
           }
         };
         
+        recorder.onstart = () => {
+          console.log("Recording started");
+          // Start the timer
+          const interval = setInterval(() => {
+            setTimer((prev) => prev + 1);
+          }, 1000);
+          setTimerInterval(interval);
+        };
+
         recorder.onstop = () => {
+          console.log("Recording stopped");
+          clearInterval(timerInterval as NodeJS.Timeout);
           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -120,10 +137,14 @@ const MonitorScreen: React.FC = () => {
           a.download = 'session.mp4';
           a.click();
           URL.revokeObjectURL(url);
+          setRecordedChunks([]);
+          setTimer(0);
         };
 
         recorder.start();
       }).catch(error => {
+        setIsRecording(false)
+        setRecordingError('Your Browser is not supporting recording, please try with another version or desktop')
         console.error("Error accessing display media:", error);
       });
     } else {
@@ -189,8 +210,10 @@ const MonitorScreen: React.FC = () => {
     setIsRecording(false);
   };
 
+
   return (
     <>
+      <ToastContainer />
       {!isAuthorized ? (
         <div className="flex w-full flex-col justify-center items-center">
           <div className="w-2/4">
@@ -222,7 +245,41 @@ const MonitorScreen: React.FC = () => {
           </div>
         </div>
       ) : (
-        <>
+        <div className="w-full flex flex-col justify-center items-center">
+          <div className="flex flex-col items-center mt-4 space-y-4">
+            <div className="text-xl font-semibold">
+              {isRecording && timer > 0 ? (
+                <>
+                  <FaClock className="inline mr-2" />
+                  {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, '0')}
+                </>
+              ) : null}
+            </div>
+            <div className="flex space-x-4">
+           {recordingError && recordingError.length > 0 ? (
+                <p>${recordingError}</p>
+           ) : (
+            <div>
+                          <button
+            onClick={handleStartRecording}
+            disabled={isRecording}
+            className={`bg-green-500 text-white py-2 px-4 rounded hover:bg-green-400 focus:outline-none focus:shadow-outline ${isRecording ? 'cursor-not-allowed' : ''}`}
+          >
+            <FaPlay className="inline mr-2" />
+            Start Recording
+          </button>
+          <button
+            onClick={handleStopRecording}
+            disabled={!isRecording}
+            className={`bg-red-500 text-white py-2 px-4 rounded hover:bg-red-400 focus:outline-none focus:shadow-outline ${!isRecording ? 'cursor-not-allowed' : ''}`}
+          >
+            <FaStop className="inline mr-2" />
+            Stop Recording
+          </button>
+            </div>
+           )}
+            </div>
+          </div>
           <div className="flex flex-col justify-center items-center h-full max-w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 mx-auto bg-white mt-10 shadow-lg rounded-lg overflow-hidden md:max-w-lg lg:max-w-xl">
             <div className="text-2xl py-4 px-6 bg-gray-900 text-white rounded-lg text-center font-bold uppercase">
               Book an Appointment
@@ -232,7 +289,7 @@ const MonitorScreen: React.FC = () => {
             </div>
             <form className="shadow-b w-full py-4 px-6">
               {Object.entries(formData).map(([key, value]) => (
-                <div className={`form-group mb-4 `} key={key}>
+                <div className={`form-group mb-4`} key={key}>
                   <label htmlFor={key} className="block text-gray-700 font-bold mb-2">
                     {key.charAt(0).toUpperCase() + key.slice(1)}
                   </label>
@@ -278,9 +335,8 @@ const MonitorScreen: React.FC = () => {
               }}
             />
           ))}
-        </>
+        </div>
       )}
-      <ToastContainer />
     </>
   );
 };

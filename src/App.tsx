@@ -6,6 +6,9 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import RealTimeForm from './components/monitor-screen';
 import FormScreen from './components/form-screen';
+import Component from './components/Chat';
+import UserComponent from './components/UserComponent';
+import AgentComponent from './components/AgentComponent';
 // import CanvasStreamForm from './components/CanvasStream';
 // import CreateSession from './components/CreateSession';
 // import MonitorSession from './components/MonitorSession';
@@ -19,6 +22,10 @@ const App: React.FC = () => {
                     <Route path="/consume" element={<ConsumeScreenPage />} /> */}
                     <Route path="/monitor" element={<RealTimeForm />} />
                     <Route path="/" element={<FormScreen />} />
+                    <Route path="/chat" element={<Component />} />
+                    <Route path="/user" element={<UserComponent />} />
+                    <Route path="/agent" element={<AgentComponent />} />
+
                     {/* <Route path="session/:sessionId" element={<MonitorSession />} />
                     <Route path="/session" element={<CreateSession />} /> */}
                     {/* <Route path="/canvas" element={<CanvasStreamForm />} /> */}
