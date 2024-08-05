@@ -13,7 +13,6 @@ const AgentComponent: React.FC = () => {
   const [selectedMediaType, setSelectedMediaType] = useState<string | null>(null);
 
   const handleReceiveMessage = useCallback((data: { id: string; sender: string; text: string; timestamp: string; media?: ArrayBuffer; mediaType?: string }) => {
-    // Add the message if it's not already present to avoid duplication
     setMessages(prevMessages => {
       if (!prevMessages.find(msg => msg.id === data.id)) {
         return [...prevMessages, data];
@@ -36,7 +35,7 @@ const AgentComponent: React.FC = () => {
   const handleSendMessage = async () => {
     if (!message) return;
 
-    const messageId = `${Date.now()}`; // Use timestamp as unique ID for simplicity
+    const messageId = `${Date.now()}`;
 
     const data = {
       id: messageId,
@@ -49,10 +48,8 @@ const AgentComponent: React.FC = () => {
     try {
       socket.emit('send_message', data);
 
-      // Add message to local state
       setMessages(prevMessages => [...prevMessages, data]);
 
-      // Clear input
       setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);

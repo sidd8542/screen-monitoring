@@ -14,12 +14,10 @@ const UserComponent: React.FC = () => {
   const [messages, setMessages] = useState<Array<{ id: string, sender: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }>>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
 
-  const messageIdRef = useRef<number>(0); // Ref to generate unique message IDs
+  const messageIdRef = useRef<number>(0);
 
-  // Handle incoming messages
   const handleReceiveMessage = useCallback((data: { id: string, sender: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }) => {
     console.log('Received message:', data);
-    // Only add if the message is not already in the state
     setMessages((prevMessages) => {
       if (!prevMessages.find(msg => msg.id === data.id)) {
         return [...prevMessages, data];
@@ -43,7 +41,7 @@ const UserComponent: React.FC = () => {
   }, [sessionId, handleReceiveMessage]);
 
   const handleSendMessage = async () => {
-    if (!message && !media) return; // Prevent sending empty messages
+    if (!message && !media) return;
 
     const sendBinaryMedia = (file: File): Promise<ArrayBuffer> => {
       return new Promise((resolve, reject) => {
@@ -59,7 +57,7 @@ const UserComponent: React.FC = () => {
     try {
       const binaryMedia = media ? await sendBinaryMedia(media) : undefined;
 
-      const messageId = `${messageIdRef.current++}`; // Generate unique ID for the message
+      const messageId = `${messageIdRef.current++}`;
 
       const data = {
         id: messageId,
@@ -76,9 +74,9 @@ const UserComponent: React.FC = () => {
 
       setMessage('');
       setMessages((prevMessages) => [...prevMessages, data]);
-      setMedia(null); // Clear media after sending
-      setMediaType(null); // Clear media after sending
-      setShowModal(false); // Close the modal
+      setMedia(null);
+      setMediaType(null); 
+      setShowModal(false); 
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -88,9 +86,15 @@ const UserComponent: React.FC = () => {
     if (e.target.files?.length) {
       setMedia(e.target.files[0]);
       setMediaType(e.target.files[0].type);
-      setShowModal(true); // Show the modal when a file is selected
+      setShowModal(true);
     }
   };
+
+  const handleClose = () => {
+    setMedia(null); 
+    setMediaType(null); 
+    setShowModal(false); 
+  }
 
   const generateSessionId = () => {
     const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
@@ -170,7 +174,7 @@ const UserComponent: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setShowModal(false)}>Cancel</button>
+                  <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={handleClose}>Cancel</button>
                   <button className="px-4 py-2 bg-green-500 text-white rounded" onClick={handleSendMessage}>Send</button>
                 </div>
               </div>
