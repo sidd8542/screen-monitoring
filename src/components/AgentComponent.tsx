@@ -2,11 +2,12 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { IoSendOutline } from 'react-icons/io5';
 import { AiOutlinePaperClip } from 'react-icons/ai';
+import { BiVideoRecording } from "react-icons/bi";
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Establish socket connection
 // const socket = io('http://localhost:8080');
-const socket = io('wss://3360-171-61-202-233.ngrok-free.app');
+const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
 
 const AgentComponent: React.FC = () => {
   const [sessionId, setSessionId] = useState<string>('');
@@ -149,6 +150,7 @@ const AgentComponent: React.FC = () => {
           </video>
         );
       case 'video/mp4':
+        case 'video/quicktime':
         return (
           <video controls className="w-full h-32 object-cover rounded mt-2">
             <source src={mediaUrl} type="video/mp4" />
@@ -162,7 +164,7 @@ const AgentComponent: React.FC = () => {
 
 
   return (
-    <div className="flex flex-col justify-center items-center max-w-lg w-full mx-auto  w-full p-10 h-screen">
+    <div className="flex flex-col justify-center items-center max-w-lg w-full mx-auto  w-full p-2 h-screen">
       {!sessionId ? (
         <div className="flex flex-col items-center justify-center h-full">
           <input
@@ -179,6 +181,8 @@ const AgentComponent: React.FC = () => {
         <div className="flex flex-col w-full border h-screen relative">
           <header style={{ background: '#343E4E' }} className="text-white py-4 px-6 rounded border flex items-center justify-between">
             <span className="text-lg font-semibold">Session ID: {sessionId}</span>
+           <BiVideoRecording  size={24}
+              className="cursor-pointer text-white"/>
           </header>
           <div
             style={{ background: "#F0F5F9" }}

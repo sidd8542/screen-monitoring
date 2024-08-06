@@ -7,7 +7,7 @@ import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Socket connection
 // const socket = io('http://localhost:8080');
-const socket = io('wss://3360-171-61-202-233.ngrok-free.app');
+const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
 
 const UserComponent: React.FC = () => {
   const [sessionId, setSessionId] = useState<string>('');
@@ -147,7 +147,7 @@ const UserComponent: React.FC = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       console.log(stream);
 
-      setTimeout(() => {
+      // setTimeout(() => {
         console.log(stream);
         setStream(stream);
         if (videoRef.current) {
@@ -156,7 +156,7 @@ const UserComponent: React.FC = () => {
         sendVideoFrames(stream);
         setCameraOn(true)
         sendVideoFrames(stream);
-      }, 100);
+      // }, 100);
     } catch (error) {
       setCameraOn(false)
       console.error("Error accessing camera:", error);
@@ -245,7 +245,7 @@ const UserComponent: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center max-w-lg w-full mx-auto  w-full p-10 h-screen">
+    <div className="flex flex-col justify-center items-center max-w-lg w-full mx-auto  w-full p-2 h-screen">
       {!sessionId ? (
         <div className="flex justify-center items-center h-full">
           <button className="p-2 bg-black text-white rounded" onClick={generateSessionId}>
@@ -267,7 +267,7 @@ const UserComponent: React.FC = () => {
           </header>
           <div
             style={{ background: "#F0F5F9" }}
-            className="flex-1 overflow-y-auto p-6 h-full"
+            className="flex-1 overflow-y-auto p-2 h-full"
           >
             <div className="grid gap-4">
               {messages.map((msg) => (
@@ -319,7 +319,7 @@ const UserComponent: React.FC = () => {
               ))}
             </div>
           </div>
-          <div className="border-t p-6 border flex items-center justify-center gap-2">
+          <div className="border-t p-5 border flex items-center justify-center gap-2">
             <label htmlFor="file-upload" className="cursor-pointer">
               <AiOutlinePaperClip size={24} className="text-gray-600" />
             </label>
@@ -347,11 +347,11 @@ const UserComponent: React.FC = () => {
                 />
               </div>
               {!visulizer && (
-                <div className="flex justify-center items-center relative w-full">
+                <div className="flex justify-center items-center relative">
                   <input
                     id="message"
                     placeholder="Type your message..."
-                    className="flex-1 p-1 border rounded-3xl p-2"
+                    className="flex-1 border rounded-3xl p-2"
                     autoComplete="off"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
