@@ -156,6 +156,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const path  = require('path')
 
 const app = express();
 const server = http.createServer(app);
@@ -165,6 +166,8 @@ const io = socketIo(server, {
     methods: ['GET', 'POST']
   }
 });
+
+app.use(express.static(path.join(__dirname, 'build')));
 
 io.on('connection', (socket) => {
   console.log('A user connected');
@@ -182,6 +185,11 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('A user disconnected');
   });
+});
+
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 server.listen(8080, () => {
