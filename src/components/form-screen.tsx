@@ -33,6 +33,7 @@ interface TrackingData {
     formData: FormData;
     error?: { [key: string]: string };
     focusedField?: string | null;
+    chatId?: string;
 }
 
 const FormScreen: React.FC = () => {
@@ -46,7 +47,7 @@ const FormScreen: React.FC = () => {
         message: ""
     });
     const [sessionId, setSessionId] = useState<string>(uuidv4());
-    const [chatSesionId, setchatSesionId] = useState<string>(uuidv4());
+    const [chatSesionId, setchatSesionId] = useState<string>();
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [focusedField, setFocusedField] = useState<string | null>(null);
     const socket = useRef<WebSocket | null>(null);
@@ -61,7 +62,7 @@ const FormScreen: React.FC = () => {
 
     useEffect(() => {
         socket.current = new WebSocket("ws://localhost:8080");
-        // socket.current = new WebSocket("wss://web-socks-01.azurewebsites.net");
+        // socket.current = new WebSocket("wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app");
 
         socket.current.onopen = () => {
             console.log("WebSocket connection established");
@@ -86,17 +87,19 @@ const FormScreen: React.FC = () => {
         updatedFormData?: FormData,
         cursorAction?: string,
         errorMessages?: { [key: string]: string },
-        focusedField?: string
+        focusedField?: string,
+        chatId?: string
     ) => {
         if (!socket.current || socket.current.readyState !== WebSocket.OPEN) return;
 
-        console.log('Sending tracking data with errors:', errorMessages);
+        // console.log('Sending tracking data with errors:', errorMessages, chatSesionId);
 
         const trackingData: TrackingData = {
             sessionId,
             cursor: { x: mouseX, y: mouseY, action: cursorAction },
             formData: updatedFormData || formData,
             error: errorMessages || errors,
+            chatId: chatSesionId,
             focusedField
         };
 
@@ -122,7 +125,7 @@ const FormScreen: React.FC = () => {
             document.removeEventListener("mousemove", handleMouseMove);
             document.removeEventListener("click", handleClick);
         };
-    }, [formData]);
+    }, [formData, chatSesionId, errors]);
 
     const validateField = (name: keyof FormData, value: string) => {
         const newErrors: { [key: string]: string } = { ...errors };
@@ -257,37 +260,34 @@ const FormScreen: React.FC = () => {
 
     const [isComponentVisible, setIsComponentVisible] = useState(false);
 
-    const generateSessionId = () => {
-        const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-        setchatSesionId(newSessionId);
-      };
+    // const generateSessionId = () => {
+    //     console.log("call handlegenerate");
+        
+    //     const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+    //     setchatSesionId(newSessionId);
+    //   };
 
-    const handleButtonClick = () => {
-        setIsComponentVisible(!isComponentVisible);
-        if(!chatSesionId){
-            generateSessionId()
+    const handleButtonClick = (event) => {
+        console.log(event,'jshvchjs');
+        
+        if(event == 'start'){
+            setIsComponentVisible(true);
+                // generateSessionId()
+                sendTrackingData();
+        }else{
+            setIsComponentVisible(false);
+            sendTrackingData();
         }
+    
     };
 
-    const sendVideoFrames = (stream: MediaStream) => {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        const context = canvas?.getContext("2d");
+    const handleChatId = (item) => {
+        console.log(item);
+        setchatSesionId(item)
+        sendTrackingData();
 
-        if (video && canvas && context) {
-            const captureFrame = () => {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const frame = canvas.toDataURL("image/jpeg", 0.5); // Adjust quality as needed
-                if (socket.current && socket.current.readyState === WebSocket.OPEN) {
-                    socket.current.send(JSON.stringify({ sessionId, videoFrame: frame }));
-                }
-            };
+    }
 
-            video.onplay = () => {
-                setInterval(captureFrame, 300); // Adjust interval as needed
-            };
-        }
-    };
 
     return (
         <div className="flex flex-row justify-center h-3/4 w-full ">
@@ -464,7 +464,7 @@ const FormScreen: React.FC = () => {
                         <div
                             style={{ backgroundColor: "#3B82F6" }}
                             className=" bottom-5  p-3 text-white rounded-full shadow-2xl flex items-center hover:scale-105 hover:filter transition duration-300 ease-in-out hover z-50 cursor-pointer"
-                            onClick={handleButtonClick}
+                            onClick={() => handleButtonClick('stop')}
                         >
                             <IoMdClose size={32} />
 
@@ -473,7 +473,7 @@ const FormScreen: React.FC = () => {
                         <div
                             style={{ backgroundColor: "#3B82F6" }}
                             className="relative justify-end items-end p-3 text-white rounded-full shadow-2xl flex items-center hover:scale-105 hover:filter transition duration-300 ease-in-out hover z-50 cursor-pointer"
-                            onClick={handleButtonClick}
+                            onClick={() => handleButtonClick('start')}
                         >
                             <MdOutlineSupportAgent size={32} />
                         </div>
@@ -482,7 +482,7 @@ const FormScreen: React.FC = () => {
                 {isComponentVisible && (
                     <div className="side-panel-component absolute  mt-4 mr-10 flex flex-row justify-end items-end h-full ">
                         {/* The component to be displayed */}
-                        <UserComponent sessionId={chatSesionId}/>
+                        <UserComponent setId={handleChatId}/>
                     </div>
                 )}
             </div>

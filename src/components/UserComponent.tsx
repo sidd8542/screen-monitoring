@@ -7,11 +7,11 @@ import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Socket connection
 const socket = io('ws://localhost:8080');
-// const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
+// const socket = io('wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app');
 
-const UserComponent = (props) => {
-  
-  const [sessionId, setSessionId] = useState<string>(props ? props.sessionId : '');
+function UserComponent (props) {
+  const {setId} = props
+  const [sessionId, setSessionId] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [media, setMedia] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<string | null>(null);
@@ -103,8 +103,6 @@ const UserComponent = (props) => {
       setMediaType(null);
       setShowModal(false);
 
-
-
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -125,8 +123,14 @@ const UserComponent = (props) => {
   }
 
   const generateSessionId = () => {
+    console.log(Object.keys(props));
+    
     const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-    setSessionId(newSessionId);
+    // setSessionId(newSessionId);
+    if(Object.keys(props).length>0){
+      setId(newSessionId)
+      setSessionId(newSessionId);
+    }
   };
 
   const handleCapturePhoto = () => {
@@ -177,7 +181,6 @@ const UserComponent = (props) => {
 
   useEffect ( () => {
     generateSessionId()
-    
   },[])
 
 

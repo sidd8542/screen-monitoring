@@ -9,10 +9,6 @@ const initialState: ScreenShareState = {
 };
 
 const screenShareReducer = (state = initialState, action: ScreenShareActionTypes): ScreenShareState => {
-    console.log({
-        ...state,
-        screenStream: action,
-    },'<>');
     
     switch (action.type) {
         case SET_SCREEN_STREAM:

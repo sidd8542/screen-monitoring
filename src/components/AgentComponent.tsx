@@ -7,9 +7,11 @@ import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Establish socket connection
 const socket = io('ws://localhost:8080');
-// const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
+// const socket = io('wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app');
 
-const AgentComponent: React.FC = () => {
+function AgentComponent (props) {
+  console.log(props);
+  
   const [sessionId, setSessionId] = useState<string>('');
   const [message, setMessage] = useState<string>('');
   const [messages, setMessages] = useState<Array<{ id: string; sender: string; text: string; timestamp: string; media?: ArrayBuffer; mediaType?: string }>>([]);
@@ -19,6 +21,9 @@ const AgentComponent: React.FC = () => {
   const [selectedMedia, setSelectedMedia] = useState<ArrayBuffer | null>(null);
   const [selectedMediaType, setSelectedMediaType] = useState<string | null>(null);
   const [visulizer, setVisulizer] = useState(false)
+
+  console.log(sessionId);
+  
 
   const messageIdRef = useRef<number>(0);
 
@@ -44,6 +49,14 @@ const AgentComponent: React.FC = () => {
       };
     }
   }, [sessionId, handleReceiveMessage]);
+
+
+  useEffect(() => {
+    if(props.chatId){
+      setSessionId(props.chatId)
+    }
+  }, [props])
+  
 
   const handleSendMessage = async () => {
     if (!message && !media) return;
