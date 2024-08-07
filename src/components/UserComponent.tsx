@@ -6,11 +6,12 @@ import Webcam from 'react-webcam';
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Socket connection
-// const socket = io('http://localhost:8080');
-const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
+const socket = io('ws://localhost:8080');
+// const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
 
-const UserComponent: React.FC = () => {
-  const [sessionId, setSessionId] = useState<string>('');
+const UserComponent = (props) => {
+  
+  const [sessionId, setSessionId] = useState<string>(props ? props.sessionId : '');
   const [message, setMessage] = useState<string>('');
   const [media, setMedia] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<string | null>(null);
@@ -27,12 +28,15 @@ const UserComponent: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const webCam = useRef<WebSocket | null>(null);
   const [visulizer, setVisulizer] = useState(false)
+  const [videoStream, setVideoStream] = useState<any>()
 
 
 
 
 
-  const handleReceiveMessage = useCallback((data: { id: string, sender: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }) => {
+  const handleReceiveMessage = useCallback((data: {
+    id: string, sender: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string, videoStream?: string,
+  }) => {
     console.log('Received message:', data);
     setMessages((prevMessages) => {
       if (!prevMessages.find(msg => msg.id === data.id)) {
@@ -56,11 +60,13 @@ const UserComponent: React.FC = () => {
         console.log('Listener removed');
       };
     }
-  }, [sessionId, handleReceiveMessage]);
+  }, [sessionId, handleReceiveMessage, streaming]);
+
+
+
 
   const handleSendMessage = async () => {
-    if (!message && !media) return;
-
+    if (!message && !media && !streaming) return;
     const sendBinaryMedia = (file: File): Promise<ArrayBuffer> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -69,9 +75,6 @@ const UserComponent: React.FC = () => {
         };
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
-        setCameraOn(false)
-        setCameraOpen(false)
-
       });
     };
 
@@ -87,6 +90,7 @@ const UserComponent: React.FC = () => {
         text: message,
         timestamp: new Date().toLocaleTimeString(),
         media: binaryMedia,
+        videoStream: videoStream,
         mediaType: mediaType || ''
       };
 
@@ -98,6 +102,9 @@ const UserComponent: React.FC = () => {
       setMedia(null);
       setMediaType(null);
       setShowModal(false);
+
+
+
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -142,53 +149,37 @@ const UserComponent: React.FC = () => {
   };
 
 
-  const handleStartStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      console.log(stream);
+  const handleStartStream = (event: string) => {
+    if (event === 'start') {
+    setStreaming(true);
+      let constraints = { audio: true, video: { width: 1280, height: 720 } };
+      navigator.mediaDevices
+        .getUserMedia(constraints)
+        .then(function (mediaStream) {
+          setVideoStream(mediaStream)
+          var video = document.querySelector("video");
+          video.srcObject = mediaStream;
+          console.log(mediaStream);
 
-      // setTimeout(() => {
-        console.log(stream);
-        setStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-        sendVideoFrames(stream);
-        setCameraOn(true)
-        sendVideoFrames(stream);
-      // }, 100);
-    } catch (error) {
-      setCameraOn(false)
-      console.error("Error accessing camera:", error);
+          // video.onloadedmetadata = function (e) {
+          //   video.play();
+          // };
+        })
+        .catch(function (err) {
+          console.log(err.name + ": " + err.message);
+        }); // always check for errors at the end.
     }
   };
 
-  const handleStopStream = async () => {
-    if (stream) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-      setCameraOn(false);
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    }
-
-    // Additional clean-up for any other media streams if needed
-    navigator.mediaDevices.enumerateDevices().then(devices => {
-      devices.forEach(device => {
-        if (device.kind === 'videoinput' && device.deviceId) {
-          navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: device.deviceId } }
-          }).then(mediaStream => {
-            mediaStream.getTracks().forEach(track => track.stop());
-          }).catch(error => {
-            console.error('Error stopping media devices:', error);
-          });
-        }
-      });
-    });
+  const handleStopStream = (event) => {
+    setStreaming(false);
   };
+
+  useEffect ( () => {
+    generateSessionId()
+    
+  },[])
+
 
   const sendVideoFrames = (stream: MediaStream) => {
     const video = videoRef.current;
@@ -256,14 +247,30 @@ const UserComponent: React.FC = () => {
         <div className="flex flex-col w-full border h-screen relative">
           <header
             style={{ background: "#343E4E" }}
-            className="text-white py-4 px-6 rounded border flex items-center justify-between"
+            className="text-white py-6 px-6 rounded border flex items-center justify-between"
           >
             <span className="text-lg font-semibold">Session ID: {sessionId}</span>
-            <AiFillVideoCamera
+            {streaming && (
+              <div className="absolute top-16 right-2 border rounded-lg w-24  overflow-hidden shadow-lg z-50">
+                {/* <Webcam 
+                audio={true}
+                ref={webcamRef}
+              /> */}
+                <video autoPlay={true} id="videoElement" controls></video>
+              </div>
+            )}
+            {
+              streaming ? (
+                <div onClick={handleSendMessage}>'start'</div>
+
+              ) : (
+                <AiFillVideoCamera
               size={24}
               className="cursor-pointer text-white"
-              onClick={streaming ? handleStopStream : handleStartStream}
+              onClick={() => streaming ? handleStopStream('stop') : handleStartStream('start')}
             />
+              )
+            }
           </header>
           <div
             style={{ background: "#F0F5F9" }}
@@ -273,7 +280,7 @@ const UserComponent: React.FC = () => {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex items-start gap-4 ${msg.sender === "User" ? "justify-end" : ""}`}
+                  className={`flex items-start  gap-4 ${msg.sender === "User" ? "justify-end" : ""}`}
                 >
                   {msg.sender !== "User" && (
                     <img
@@ -283,7 +290,7 @@ const UserComponent: React.FC = () => {
                   )}
                   <div
                     style={{ minWidth: "100px", maxWidth: "300px" }}
-                    className="grid gap-1 text-sm"
+                    className={`grid gap-1 text-sm `}
                   >
                     <div
                       className={`flex items-center ${msg.sender === "User" ? "justify-end" : ""}`}
@@ -295,7 +302,7 @@ const UserComponent: React.FC = () => {
                       className={`rounded-2xl relative text-white`}
                     >
                       <div className="grid grid-flow-row shadow rounded-2xl justify-stretch p-2">
-                        <h6 className="text-base break-words">{msg.text}</h6>
+                        <h6 className={`text-base break-words `}>{msg.text}</h6>
                         <div className="flex flex-col justify-end items-end gap-2">
                           {msg.media && (
                             <div className="mt-2">

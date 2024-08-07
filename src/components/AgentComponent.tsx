@@ -6,8 +6,8 @@ import { BiVideoRecording } from "react-icons/bi";
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Establish socket connection
-// const socket = io('http://localhost:8080');
-const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
+const socket = io('ws://localhost:8080');
+// const socket = io('wss://9686-2405-201-600a-f9ff-96dd-9419-3cdf-9961.ngrok-free.app');
 
 const AgentComponent: React.FC = () => {
   const [sessionId, setSessionId] = useState<string>('');

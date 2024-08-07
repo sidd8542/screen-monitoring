@@ -153,13 +153,78 @@
 
 {/* <>Chatting Module</> */}
 
+// const express = require('express');
+// const http = require('http');
+// const socketIo = require('socket.io');
+// const path  = require('path')
+
+// const app = express();
+// const server = http.createServer(app);
+// const io = socketIo(server, {
+//   cors: {
+//     origin: '*',
+//     methods: ['GET', 'POST']
+//   }
+// });
+
+// app.use(express.static(path.join(__dirname, 'build')));
+
+// io.on('connection', (socket) => {
+//   console.log('A user connected');
+
+//   socket.on('join_session', (sessionId) => {
+//     socket.join(sessionId);
+//     console.log(`User joined session: ${sessionId}`);
+//   });
+
+//   socket.on('send_message', (data) => {
+//     console.log('Sending message to session:', data.sessionId, data);
+//     io.to(data.sessionId).emit('receive_message', data);
+//   });
+
+//   socket.on('disconnect', () => {
+//     console.log('A user disconnected');
+//   });
+// });
+
+
+// app.get('*', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
+
+// server.listen(8080, () => {
+//   console.log('Server is running on port 8080');
+// });
+
+
+
+
+
+
+
+
+
+
+
+{/* <>Combine</> */}
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const path  = require('path')
+const WebSocket = require('ws');
+const path = require('path');
 
+// Create an Express app
 const app = express();
+const port = 8080;
+
+// Create an HTTP server
 const server = http.createServer(app);
+
+// Create a WebSocket server
+const wss = new WebSocket.Server({ server });
+
+// Initialize Socket.IO
 const io = socketIo(server, {
   cors: {
     origin: '*',
@@ -167,8 +232,33 @@ const io = socketIo(server, {
   }
 });
 
+let clients = [];
+
+// Serve static files from the React app's build directory
 app.use(express.static(path.join(__dirname, 'build')));
 
+// WebSocket server logic
+wss.on('connection', (ws) => {
+  clients.push(ws);
+  console.log('Client connected');
+
+  ws.on('message', (message) => {
+    console.log(`Received: ${message}`);
+    // Broadcast the received message to all clients
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  });
+
+  ws.on('close', () => {
+    clients = clients.filter(client => client !== ws);
+    console.log('Client disconnected');
+  });
+});
+
+// Socket.IO server logic
 io.on('connection', (socket) => {
   console.log('A user connected');
 
@@ -187,12 +277,16 @@ io.on('connection', (socket) => {
   });
 });
 
+// Define routes for the Express app
+app.get('/', (req, res) => {
+  res.send('WebSocket and Socket.IO server is running');
+});
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-server.listen(8080, () => {
-  console.log('Server is running on port 8080');
+// Start the server
+server.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });
-

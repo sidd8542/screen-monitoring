@@ -3,6 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaPlay, FaStop, FaClock } from 'react-icons/fa';
+import RecordRTC, { invokeSaveAsDialog } from 'recordrtc';
+
 
 interface CursorData {
   x: number;
@@ -48,8 +50,7 @@ const MonitorScreen: React.FC = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  // const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [timer, setTimer] = useState<number>(0);
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   const socket = useRef<WebSocket | null>(null);
@@ -106,51 +107,65 @@ const MonitorScreen: React.FC = () => {
     };
   }, [inputSessionId, sessionId]);
 
-  useEffect(() => {
-    if (isRecording) {
-      navigator.mediaDevices.getDisplayMedia({ video: true }).then(stream => {
-        const recorder = new MediaRecorder(stream);
-        setMediaRecorder(recorder);
-        
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            setRecordedChunks(prev => [...prev, event.data]);
-          }
-        };
-        
-        recorder.onstart = () => {
-          console.log("Recording started");
-          // Start the timer
-          const interval = setInterval(() => {
-            setTimer((prev) => prev + 1);
-          }, 1000);
-          setTimerInterval(interval);
-        };
 
-        recorder.onstop = () => {
-          console.log("Recording stopped");
-          clearInterval(timerInterval as NodeJS.Timeout);
-          const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'session.mp4';
-          a.click();
-          URL.revokeObjectURL(url);
-          setRecordedChunks([]);
-          setTimer(0);
-        };
+  // useEffect(() => {
+  //   let stream;
+  //   if (isRecording) {
+  //     navigator.mediaDevices.getDisplayMedia({ video: true })
+  //       .then(strm => {
+  //         stream = strm;
+  //         const recorder = new MediaRecorder(stream);
+  //         setMediaRecorder(recorder);
 
-        recorder.start();
-      }).catch(error => {
-        setIsRecording(false)
-        setRecordingError('Your Browser is not supporting recording, please try with another version or desktop')
-        console.error("Error accessing display media:", error);
-      });
-    } else {
-      mediaRecorder?.stop();
-    }
-  }, [isRecording, recordedChunks]);
+  //         recorder.ondataavailable = (event) => {
+  //           if (event.data.size > 0) {
+  //             setRecordedChunks(prev => [...prev, event.data]);
+  //           }
+  //         };
+
+  //         recorder.onstart = () => {
+  //           console.log("Recording started");
+  //           // Start the timer
+  //           const interval = setInterval(() => {
+  //             setTimer(prev => prev + 1);
+  //           }, 1000);
+  //           setTimerInterval(interval);
+  //         };
+
+  //         recorder.onstop = () => {
+  //           console.log("Recording stopped");
+  //           clearInterval(timerInterval);
+  //           const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+  //           const url = URL.createObjectURL(blob);
+  //           const a = document.createElement('a');
+  //           a.href = url;
+  //           a.download = 'session.mp4';
+  //           a.click();
+  //           URL.revokeObjectURL(url);
+  //           setRecordedChunks([]);
+  //           setTimer(0);
+  //           stopCamera(stream);
+  //         };
+
+  //         recorder.start();
+  //       })
+  //       .catch(error => {
+  //         setIsRecording(false);
+  //         setRecordingError('Your browser does not support recording. Please try with another version or desktop.');
+  //         console.error("Error accessing display media:", error);
+  //       });
+  //   } else {
+  //     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+  //       mediaRecorder.stop();
+  //     }
+  //   }
+
+  //   return () => {
+  //     if (stream) {
+  //       stopCamera(stream);
+  //     }
+  //   };
+  // }, [isRecording]);
 
   const handleData = (data: TrackingData) => {
     console.log(data);
@@ -202,13 +217,53 @@ const MonitorScreen: React.FC = () => {
     }));
   };
 
-  const handleStartRecording = () => {
-    setIsRecording(true);
+  const [videoURL, setVideoURL] = useState('');
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const recordedVideoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [blob, setBlob] = useState(null);
+  const [stream, setStream] = useState(null);
+
+  const refVideo = useRef(null);
+  const recorderRef = useRef(null);
+  
+
+  const handleStartRecording = async () => {
+    try {
+     // const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+     const mediaStream = await navigator.mediaDevices.getDisplayMedia({
+      video: {
+        width: 1920,
+        height: 1080,
+        frameRate: 30,
+      },
+      audio: false,
+    });
+
+    setStream(mediaStream);
+    recorderRef.current = new RecordRTC(mediaStream, { type: 'video' });
+    recorderRef.current.startRecording();
+    } catch (error) {
+      console.error('Error accessing display media:', error);
+    }
   };
 
   const handleStopRecording = () => {
-    setIsRecording(false);
+    recorderRef.current.stopRecording(() => {
+      setBlob(recorderRef.current.getBlob());
+    invokeSaveAsDialog(recorderRef.current.getBlob());
+    });
   };
+
+  const handleDownloadRecording = () => {
+
+  };
+
+  useEffect(() => {
+    if (videoURL && recordedVideoRef.current) {
+      recordedVideoRef.current.src = videoURL;
+    }
+  }, [videoURL]);
 
 
   return (
@@ -259,23 +314,23 @@ const MonitorScreen: React.FC = () => {
            {recordingError && recordingError.length > 0 ? (
                 <p>${recordingError}</p>
            ) : (
-            <div>
+            <div className="flex flex-row gap-5">
                           <button
-            onClick={handleStartRecording}
-            disabled={isRecording}
-            className={`bg-green-500 text-white py-2 px-4 rounded hover:bg-green-400 focus:outline-none focus:shadow-outline ${isRecording ? 'cursor-not-allowed' : ''}`}
-          >
-            <FaPlay className="inline mr-2" />
-            Start Recording
-          </button>
-          <button
-            onClick={handleStopRecording}
-            disabled={!isRecording}
-            className={`bg-red-500 text-white py-2 px-4 rounded hover:bg-red-400 focus:outline-none focus:shadow-outline ${!isRecording ? 'cursor-not-allowed' : ''}`}
-          >
-            <FaStop className="inline mr-2" />
-            Stop Recording
-          </button>
+        id="startBtn"
+        onClick={handleStartRecording}
+        disabled={isRecording}
+        className={`bg-green-500 text-white py-2 px-4 rounded hover:bg-green-400 focus:outline-none focus:shadow-outline ${isRecording ? 'cursor-not-allowed' : ''}`}
+      >
+        Start Recording
+      </button>
+      <button
+        id="stopBtn"
+        onClick={handleStopRecording}
+        className={`bg-red-500 text-white py-2 px-4 rounded hover:bg-red-400 focus:outline-none focus:shadow-outline }`}
+      >
+        Stop Recording
+      </button>
+
             </div>
            )}
             </div>
