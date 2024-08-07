@@ -56,13 +56,15 @@ const FormScreen: React.FC = () => {
     const [copyStatus, setCopyStatus] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [cameraOn, setCameraOn] = useState(false)
+    const [messages, setMessages] = useState<Array<{ id: string, sender: string, sessionId: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }>>([]);
+
 
     let mouseX = 0,
         mouseY = 0;
 
     useEffect(() => {
-        socket.current = new WebSocket("ws://localhost:8080");
-        // socket.current = new WebSocket("wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app");
+        // socket.current = new WebSocket("ws://localhost:8080");
+        socket.current = new WebSocket("wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app");
 
         socket.current.onopen = () => {
             console.log("WebSocket connection established");
@@ -236,16 +238,6 @@ const FormScreen: React.FC = () => {
         }
     };
 
-    // const handleStartCamera = async () => {
-    //     try {
-    // const { status, startRecording, stopRecording, mediaBlobUrl } =
-    // useReactMediaRecorder({ video: true })
-    //     } catch (error) {
-    //         setCameraOn(false)
-    //         console.error("Error accessing camera:", error);
-    //     }
-    // };
-
     const handleStopCamera = () => {
         if (stream) {
             stream.getTracks().forEach((track) => track.stop());
@@ -260,234 +252,242 @@ const FormScreen: React.FC = () => {
 
     const [isComponentVisible, setIsComponentVisible] = useState(false);
 
-    // const generateSessionId = () => {
-    //     console.log("call handlegenerate");
-        
-    //     const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-    //     setchatSesionId(newSessionId);
-    //   };
+    const generateSessionId = () => {
+        console.log("call handlegenerate");
+
+        const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+        setchatSesionId(newSessionId);
+      };
 
     const handleButtonClick = (event) => {
-        console.log(event,'jshvchjs');
-        
-        if(event == 'start'){
+        if (event == 'start') {
             setIsComponentVisible(true);
-                // generateSessionId()
-                sendTrackingData();
-        }else{
+            if(!chatSesionId){
+                generateSessionId()
+            }
+            sendTrackingData();
+        } else {
             setIsComponentVisible(false);
             sendTrackingData();
         }
-    
+
     };
 
-    const handleChatId = (item) => {
+    const handleMessages = (item) => {
         console.log(item);
-        setchatSesionId(item)
-        sendTrackingData();
+        setMessages(item)
+        // if(!chatSesionId){
+        //     setchatSesionId(item)
+        // }
+        // sendTrackingData();
 
     }
 
 
     return (
-        <div className="flex flex-row justify-center h-3/4 w-full ">
-
-            <div
-                className="flex flex-col justify-center items-center h-full gap-5 max-w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 mx-auto bg-white mt-10 rounded-lg overflow-hidden md:max-w-lg lg:max-w-xl">
-                <div className="flex items-center gap-5 flex-col justify-between">
-                    <div className="flex space-x-4">
-                        <button
-                            type="button"
-                            onClick={getCameraPermission}
-                            className="bg-blue-500 text-white rounded-md flex items-center px-4 py-2 hover:bg-blue-600 transition"
-                        >
-                            <FaCamera className="h-5 w-5 mr-2" />
-                            Start Camera
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleStopCamera}
-                            className="bg-red-500 text-white rounded-md flex items-center px-4 py-2 hover:bg-red-600 transition"
-                        >
-                            <FaStop className="h-5 w-5 mr-2" />
-                            Stop Camera
-                        </button>
+        (
+            <div className="flex flex-row h-full gap-5 w-full items-end justify-center p-4 ">
+                <div className="flex flex-col w-full p-2 justify-center shadow-2xl gap-5 items-center bg-white rounded-lg overflow-hidden ">
+                    <div className="flex items-center flex-col justify-between">
+                        <div className="flex flex-row gap-2">
+                            <button
+                                type="button"
+                                onClick={getCameraPermission}
+                                className="bg-blue-500 text-white flex rounded-md flex items-center px-6 py-2  hover:bg-red-600 transition"
+                            >
+                                <FaCamera className="h-5 w-5 mr-2" />
+                                Start Camera
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleStopCamera}
+                                className="bg-red-500 text-white flex rounded-md flex items-center px-6 py-1  hover:bg-red-600 transition"
+                            >
+                                <FaStop className="h-5 w-5 mr-2" />
+                                Stop Camera
+                            </button>
+                        </div>
                     </div>
-
-                </div>
-                <div className="text-2xl rounded-lg py-4 px-6 bg-gray-900 text-white text-center font-bold uppercase">
-                    Book an Appointment
-                </div>
-                <div className="session-info py-2 px-6 gap-5 flex items-center justify-between">
-                    <p>Session ID: {sessionId}</p>
-                    <FaRegCopy onClick={copySessionId} title='Copy Session Id' className="mr-2 cursor-pointer" />
-                </div>
-                <form className="shadow-b w-full py-4 px-6" action="" method="POST" onSubmit={handleSubmit}>
-                    <div className="form-group mb-4">
-                        <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
-                            Name
-                        </label>
-                        <input
-                            type="text"
-                            id="name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            placeholder="Enter your name"
-                            className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    <div className="text-2xl rounded-lg py-4 px-6 bg-blue-500 text-white text-center font-bold uppercase">
+                        Book an Appointment
+                    </div>
+                    <div className="session-info py-2 px-6 gap-5 flex items-center justify-between">
+                        <p>Session ID: {sessionId}</p>
+                        <FaRegCopy
+                            onClick={copySessionId}
+                            title="Copy Session Id"
+                            className="mr-2 cursor-pointer"
                         />
                     </div>
-                    <div className="form-group mb-4">
-                        <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            placeholder="Enter your email"
-                            className={`form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.email ? "border-red-500" : ""
-                                }`}
-                        />
-                        {errors.email && <p className="text-red-500 text-xs italic">{errors.email}</p>}
-                    </div>
-                    <div className="form-group mb-4">
-                        <label htmlFor="phone" className="block text-gray-700 font-bold mb-2">
-                            Phone
-                        </label>
-                        <input
-                            type="tel"
-                            id="phone"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            placeholder="Enter your phone number"
-                            className={`form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.phone ? "border-red-500" : ""
-                                }`}
-                        />
-                        {errors.phone && <p className="text-red-500 text-xs italic">{errors.phone}</p>}
-                    </div>
-                    <div className="form-group mb-4">
-                        <label htmlFor="date" className="block text-gray-700 font-bold mb-2">
-                            Date
-                        </label>
-                        <input
-                            type="date"
-                            id="date"
-                            name="date"
-                            value={formData.date}
-                            onChange={handleInputChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        />
-                    </div>
-                    <div className="form-group mb-4">
-                        <label htmlFor="time" className="block text-gray-700 font-bold mb-2">
-                            Time
-                        </label>
-                        <input
-                            type="time"
-                            id="time"
-                            name="time"
-                            value={formData.time}
-                            onChange={handleInputChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        />
-                    </div>
-                    <div className="form-group mb-4">
-                        <label htmlFor="service" className="block text-gray-700 font-bold mb-2">
-                            Service
-                        </label>
-                        <select
-                            id="service"
-                            name="service"
-                            value={formData.service}
-                            onChange={handleSelectChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        >
-                            <option value="">Select a service</option>
-                            <option value="consultation">Consultation</option>
-                            <option value="diagnosis">Diagnosis</option>
-                            <option value="therapy">Therapy</option>
-                        </select>
-                    </div>
-                    <div className="form-group mb-4">
-                        <label htmlFor="message" className="block text-gray-700 font-bold mb-2">
-                            Message
-                        </label>
-                        <textarea
-                            id="message"
-                            name="message"
-                            value={formData.message}
-                            onChange={handleInputChange}
-                            onBlur={handleBlur}
-                            onFocus={handleFocus}
-                            placeholder="Enter your message"
-                            className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
+                    <form
+                        className="shadow-b w-full py-4 px-6"
+                        action=""
+                        method="POST"
+                        onSubmit={handleSubmit}
                     >
-                        Book Appointment
-                    </button>
-                </form>
-                <ToastContainer />
-            </div>
-            {
-                cameraOn && videoRef && (
-                    <div className="gap-5 flex flex-col top-0 justify-start h-1/4 m-5">
+                        <div className="form-group mb-4">
+                            <label htmlFor="name" className="block text-gray-700 font-bold mb-2">
+                                Name
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                placeholder="Enter your name"
+                                className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                        </div>
+                        <div className="form-group mb-4">
+                            <label htmlFor="email" className="block text-gray-700 font-bold mb-2">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                placeholder="Enter your email"
+                                className={`form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.email ? "border-red-500" : ""
+                                    }`}
+                            />
+                            {errors.email && (
+                                <p className="text-red-500 text-xs italic">{errors.email}</p>
+                            )}
+                        </div>
+                        <div className="form-group mb-4">
+                            <label htmlFor="phone" className="block text-gray-700 font-bold mb-2">
+                                Phone
+                            </label>
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                placeholder="Enter your phone number"
+                                className={`form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors.phone ? "border-red-500" : ""
+                                    }`}
+                            />
+                            {errors.phone && (
+                                <p className="text-red-500 text-xs italic">{errors.phone}</p>
+                            )}
+                        </div>
+                        <div className="form-group mb-4">
+                            <label htmlFor="date" className="block text-gray-700 font-bold mb-2">
+                                Date
+                            </label>
+                            <input
+                                type="date"
+                                id="date"
+                                name="date"
+                                value={formData.date}
+                                onChange={handleInputChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                        </div>
+                        <div className="form-group mb-4">
+                            <label htmlFor="time" className="block text-gray-700 font-bold mb-2">
+                                Time
+                            </label>
+                            <input
+                                type="time"
+                                id="time"
+                                name="time"
+                                value={formData.time}
+                                onChange={handleInputChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                        </div>
+                        <div className="form-group mb-4">
+                            <label htmlFor="service" className="block text-gray-700 font-bold mb-2">
+                                Service
+                            </label>
+                            <select
+                                id="service"
+                                name="service"
+                                value={formData.service}
+                                onChange={handleSelectChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            >
+                                <option value="">Select a service</option>
+                                <option value="consultation">Consultation</option>
+                                <option value="diagnosis">Diagnosis</option>
+                                <option value="therapy">Therapy</option>
+                            </select>
+                        </div>
+                        <div className="form-group mb-4">
+                            <label htmlFor="message" className="block text-gray-700 font-bold mb-2">
+                                Message
+                            </label>
+                            <textarea
+                                id="message"
+                                name="message"
+                                value={formData.message}
+                                onChange={handleInputChange}
+                                onBlur={handleBlur}
+                                onFocus={handleFocus}
+                                placeholder="Enter your message"
+                                className="form-control shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
+                        >
+                            Book Appointment
+                        </button>
+                    </form>
+                    <ToastContainer />
+                </div>
+                <div className="flex flex-col  h-full p-2">
+                    <div className="flex flex-row justify-end items-end">
                         <div>
-                            <video ref={videoRef} autoPlay muted className=" mt-2 border rounded-lg" />
-                            <canvas ref={canvasRef} className="hidden" />
+                            {isComponentVisible && (
+                                <div className="side-panel-component w-full h-full flex justify-center items-center  mt-4 mr-4 w-32 bg-white shadow-2xl rounded-lg z-50 overflow-auto">
+                                    <UserComponent setId={chatSesionId} messagess={messages} setMessagess={handleMessages}></UserComponent>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                )
-            }
-            <div className="gap-5 w-full flex flex-col bottom-10 justify-end w-20 items-end h-screen p-5">
-                {
-                    isComponentVisible ? (
-                        <div
-                            style={{ backgroundColor: "#3B82F6" }}
-                            className=" bottom-5  p-3 text-white rounded-full shadow-2xl flex items-center hover:scale-105 hover:filter transition duration-300 ease-in-out hover z-50 cursor-pointer"
-                            onClick={() => handleButtonClick('stop')}
-                        >
-                            <IoMdClose size={32} />
+                        <div className="z-9999">
+                            {isComponentVisible ? (
+                                <div
+                                    style={{ backgroundColor: "#3B82F6" }}
+                                    className="p-3 text-white rounded-full w-16 h-16 items-center justify-center shadow-2xl flex  cursor-pointer"
+                                    onClick={() => handleButtonClick("stop")}
+                                >
+                                    <IoMdClose size={32} />
+                                </div>
+                            ) : (
+                                <div
+                                    style={{ backgroundColor: "#3B82F6" }}
+                                    className="p-3 text-white rounded-full w-16 h-16 items-center justify-center shadow-2xl flex items-center cursor-pointer"
+                                    onClick={() => handleButtonClick("start")}
+                                >
+                                    <MdOutlineSupportAgent size={32} />
+                                </div>
+                            )}
 
                         </div>
-                    ) : (
-                        <div
-                            style={{ backgroundColor: "#3B82F6" }}
-                            className="relative justify-end items-end p-3 text-white rounded-full shadow-2xl flex items-center hover:scale-105 hover:filter transition duration-300 ease-in-out hover z-50 cursor-pointer"
-                            onClick={() => handleButtonClick('start')}
-                        >
-                            <MdOutlineSupportAgent size={32} />
-                        </div>
-                    )
-                }
-                {isComponentVisible && (
-                    <div className="side-panel-component absolute  mt-4 mr-10 flex flex-row justify-end items-end h-full ">
-                        {/* The component to be displayed */}
-                        <UserComponent setId={handleChatId}/>
                     </div>
-                )}
+
+                </div>
             </div>
-
-        </div>
+        )
     );
 };
 

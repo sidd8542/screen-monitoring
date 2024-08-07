@@ -6,27 +6,25 @@ import Webcam from 'react-webcam';
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Socket connection
-const socket = io('ws://localhost:8080');
-// const socket = io('wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app');
+// const socket = io('ws://localhost:8080');
+const socket = io('wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app');
 
 function UserComponent (props) {
-  const {setId} = props
-  const [sessionId, setSessionId] = useState<string>('');
+  const {setId, setMessagess,messagess} = props
+  
+  const [sessionId, setSessionId] = useState<string>(props ? props?.setId : '');
   const [message, setMessage] = useState<string>('');
   const [media, setMedia] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Array<{ id: string, sender: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ id: string, sender: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }>>(messagess.length>0?messagess:[]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [cameraOpen, setCameraOpen] = useState<boolean>(false);
   const [streaming, setStreaming] = useState<boolean>(false);
-  const messageIdRef = useRef<number>(0);
   const webcamRef = useRef<Webcam>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraOn, setCameraOn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const webCam = useRef<WebSocket | null>(null);
   const [visulizer, setVisulizer] = useState(false)
   const [videoStream, setVideoStream] = useState<any>()
 
@@ -99,6 +97,7 @@ function UserComponent (props) {
 
       setMessage('');
       setMessages((prevMessages) => [...prevMessages, data]);
+      setMessagess(messages);
       setMedia(null);
       setMediaType(null);
       setShowModal(false);
@@ -126,10 +125,15 @@ function UserComponent (props) {
     console.log(Object.keys(props));
     
     const newSessionId = 'session_' + Math.random().toString(36).substr(2, 9);
-    // setSessionId(newSessionId);
+    if(!sessionId){
+       // setSessionId(newSessionId);
     if(Object.keys(props).length>0){
       setId(newSessionId)
       setSessionId(newSessionId);
+    } else{
+      setId(sessionId)
+      setSessionId(sessionId);
+    }
     }
   };
 
@@ -180,29 +184,9 @@ function UserComponent (props) {
   };
 
   useEffect ( () => {
-    generateSessionId()
+    // generateSessionId()
   },[])
 
-
-  const sendVideoFrames = (stream: MediaStream) => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-
-    if (video && canvas && context) {
-      const captureFrame = () => {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const frame = canvas.toDataURL("image/jpeg", 0.5);
-        if (webCam.current && webCam.current.readyState === WebSocket.OPEN) {
-          webCam.current.send(JSON.stringify({ sessionId, videoFrame: frame }));
-        }
-      };
-
-      video.onplay = () => {
-        setInterval(captureFrame, 300);
-      };
-    }
-  };
 
   const handleReceiveOffer = async (data: { offer: RTCSessionDescriptionInit }) => {
     if (!peerConnectionRef.current) return;

@@ -6,8 +6,8 @@ import { BiVideoRecording } from "react-icons/bi";
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
 // Establish socket connection
-const socket = io('ws://localhost:8080');
-// const socket = io('wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app');
+// const socket = io('ws://localhost:8080');
+const socket = io('wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app');
 
 function AgentComponent (props) {
   console.log(props);
@@ -164,6 +164,7 @@ function AgentComponent (props) {
         );
       case 'video/mp4':
         case 'video/quicktime':
+        case 'video/webm':
         return (
           <video controls className="w-full h-32 object-cover rounded mt-2">
             <source src={mediaUrl} type="video/mp4" />

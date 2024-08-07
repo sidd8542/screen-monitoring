@@ -7,6 +7,7 @@ import RecordRTC, { invokeSaveAsDialog } from 'recordrtc';
 import AgentComponent from "./AgentComponent";
 import { IoMdClose } from "react-icons/io";
 import { MdOutlineSupportAgent } from "react-icons/md";
+import Component from "./table";
 
 
 
@@ -61,12 +62,13 @@ const MonitorScreen: React.FC = () => {
   const socket = useRef<WebSocket | null>(null);
   const [recordingError, setRecordingError] = useState('')
   const [isComponentVisible, setIsComponentVisible] = useState(false);
+  const [sessions, setSessions] = useState([]);
 
 
 
   useEffect(() => {
-    socket.current = new WebSocket("ws://localhost:8080");
-    // socket.current = new WebSocket("wss://2809-2405-201-600a-f9ff-194d-b9b4-a869-9c57.ngrok-free.app");
+    // socket.current = new WebSocket("ws://localhost:8080");
+    socket.current = new WebSocket("wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app");
     socket.current.onopen = () => {
       console.log("WebSocket connection established");
     };
@@ -89,6 +91,12 @@ const MonitorScreen: React.FC = () => {
             try {
               data = JSON.parse(reader.result);
               handleData(data);
+              const obj = [
+                { sessionId: data.sessionId ? data.sessionId : 'abcdd', status: "active" },
+                { sessionId: "abcdefg123", status: "closed" },
+                { sessionId: "hijklmn456", status: "pending" },
+              ];
+              setSessions(obj)
             } catch (error) {
               console.error("Error parsing WebSocket message:", error);
             }
@@ -115,11 +123,19 @@ const MonitorScreen: React.FC = () => {
 
   const handleData = (data: TrackingData) => {
     console.log(data);
+    const obj = [
+      { sessionId: data.sessionId ? data.sessionId : 'abcdd', status: "active" },
+      { sessionId: "abcdefg123", status: "closed" },
+      { sessionId: "hijklmn456", status: "pending" },
+    ];
+    setSessions(obj)
     setSessionId(data.sessionId)
     if (data?.chatId) {
       setIsComponentVisible(true)
       setchatSesionId(data?.chatId)
       console.log(data.chatId);
+    } else {
+      setIsComponentVisible(false)
     }
 
     if (data.type === 'toast') {
@@ -161,22 +177,11 @@ const MonitorScreen: React.FC = () => {
     setSessionId(inputSessionId);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   const [videoURL, setVideoURL] = useState('');
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const recordedVideoRef = useRef<HTMLVideoElement | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [blob, setBlob] = useState(null);
   const [stream, setStream] = useState(null);
 
-  const refVideo = useRef(null);
   const recorderRef = useRef(null);
 
 
@@ -207,10 +212,6 @@ const MonitorScreen: React.FC = () => {
     });
   };
 
-  const handleDownloadRecording = () => {
-
-  };
-
   useEffect(() => {
     if (videoURL && recordedVideoRef.current) {
       recordedVideoRef.current.src = videoURL;
@@ -218,24 +219,13 @@ const MonitorScreen: React.FC = () => {
   }, [videoURL]);
 
 
-  const handleButtonClick = (event) => {
-    if (event == 'start') {
-      setIsComponentVisible(true);
-
-    } else {
-      setIsComponentVisible(false);
-
-    }
-
-  };
-
 
   return (
     <>
       <ToastContainer />
       {!isAuthorized ? (
-        <div className="flex w-full flex-col justify-center h-3/4 items-center">
-          <div className="w-2/4">
+        <div className="flex w-full flex-col justify-center items-center">
+          <div className="w-3/4 flex flex-col justify-center ">
             <form
               onSubmit={handleSessionIdSubmit}
               className="flex flex-col w-full justify-center items-center h-full"
@@ -261,13 +251,14 @@ const MonitorScreen: React.FC = () => {
               </button>
               {sessionError && <p className="error-message text-red-500 mt-2">{sessionError}</p>}
             </form>
+            {/* <Component sessionss={sessions} onItemClick={handleClick}></Component> */}
           </div>
         </div>
       ) : (
-        <div className="flex flex-row">
-          <div className="w-full flex flex-col relative justify-between items-center">
-            <div className="flex flex-col items-center mt-4 space-y-4">
-              <div className="text-xl font-semibold">
+        <div className="flex flex-row h-full gap-5 w-full items-end justify-center p-4 ">
+          <div className="flex flex-col w-full p-2 justify-center shadow-2xl gap-5 items-center bg-white rounded-lg overflow-hidden ">
+            <div className="flex items-center flex-col justify-between">
+              <div className="flex flex-row gap-2">
                 {isRecording && timer > 0 ? (
                   <>
                     <FaClock className="inline mr-2" />
@@ -300,51 +291,50 @@ const MonitorScreen: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex flex-col justify-center items-center h-full max-w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 mx-auto bg-white mt-10 shadow-lg rounded-lg overflow-hidden md:max-w-lg lg:max-w-xl">
-              <div className="text-2xl py-4 px-6 bg-gray-900 text-white rounded-lg text-center font-bold uppercase">
-                Book an Appointment
-              </div>
-              <div className="session-info py-2 px-6">
-                <p>Active Session ID: {sessionId}</p>
-              </div>
-              <form className="shadow-b w-full py-4 px-6">
-                {Object.entries(formData).map(([key, value]) => (
-                  <div className={`form-group mb-4`} key={key}>
-                    <label htmlFor={key} className="block text-gray-700 font-bold mb-2">
-                      {key.charAt(0).toUpperCase() + key.slice(1)}
-                    </label>
-                    {key === "message" ? (
-                      <textarea
-                        id={key}
-                        name={key}
-                        value={value}
-                        readOnly
-                        className={`form-control ${focusedField === key ? 'highlighted' : ''} shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors[key] ? 'border-red-500' : ''}`}
-                      />
-                    ) : (
-                      <input
-                        type={key === "email" ? "email" : key === "phone" ? "tel" : key === "date" ? "date" : key === "time" ? "time" : "text"}
-                        id={key}
-                        name={key}
-                        value={value}
-                        readOnly
-                        className={`form-control ${focusedField === key ? 'highlighted' : ''} shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors[key] ? 'border-red-500' : ''}`}
-                      />
-                    )}
-                    {errors[key] && <p className="text-red-500 text-sm mt-1">{errors[key]}</p>}
-                  </div>
-                ))}
-                <div className="flex items-center justify-center mb-4">
-                  <button
-                    disabled
-                    className="bg-gray-700 text-white py-2 px-4 rounded cursor-not-allowed focus:outline-none focus:shadow-outline"
-                    type="submit"
-                  >
-                    Book Appointment
-                  </button>
-                </div>
-              </form>
+            <div className="text-2xl rounded-lg py-4 px-6 bg-blue-500 text-white text-center font-bold uppercase">
+              Book an Appointment
             </div>
+            <div className="session-info py-2 px-6 gap-5 flex items-center justify-between">
+              <p>Active Session ID: {sessionId}</p>
+            </div>
+            <form
+              className=" w-full py-4 px-6">
+              {Object.entries(formData).map(([key, value]) => (
+                <div className="form-group mb-4">
+                  <label htmlFor={key} className="block text-gray-700 font-bold mb-2">
+                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                  </label>
+                  {key === "message" ? (
+                    <textarea
+                      id={key}
+                      name={key}
+                      value={value}
+                      readOnly
+                      className={`form-control ${focusedField === key ? 'highlighted' : ''} shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors[key] ? 'border-red-500' : ''}`}
+                    />
+                  ) : (
+                    <input
+                      type={key === "email" ? "email" : key === "phone" ? "tel" : key === "date" ? "date" : key === "time" ? "time" : "text"}
+                      id={key}
+                      name={key}
+                      value={value}
+                      readOnly
+                      className={`form-control ${focusedField === key ? 'highlighted' : ''} shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ${errors[key] ? 'border-red-500' : ''}`}
+                    />
+                  )}
+                  {errors[key] && <p className="text-red-500 text-sm mt-1">{errors[key]}</p>}
+                </div>
+              ))}
+              <div className="flex items-center justify-center mb-4">
+                <button
+                  disabled
+                  className="w-full py-3 px-4 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
+                  type="submit"
+                >
+                  Book Appointment
+                </button>
+              </div>
+            </form>
             {Object.keys(cursors).map((key) => (
               <div
                 key={key}
@@ -356,41 +346,38 @@ const MonitorScreen: React.FC = () => {
               />
             ))}
           </div>
-          <div className="gap-5 h-3/4  w-full flex flex-col bottom-10 right-20 justify-end w-20 items-end h-screen p-5">
-            {
-              isComponentVisible ? (
-                <>
-                <div
-                  style={{ backgroundColor: "#3B82F6" }}
-                  className=" bottom-5  p-3 text-white rounded-full shadow-2xl flex items-center hover:scale-105 hover:filter transition duration-300 ease-in-out hover z-50 cursor-pointer"
-                  onClick={() => handleButtonClick('stop')}
-                >
-                  <IoMdClose size={32} />
+          <div className="flex flex-col">
+            <div className="flex flex-row justify-end items-end">
+              <div>
+                {
+                  isComponentVisible && (
+                    <div className="side-panel-component w-full h-full flex justify-center items-center  mr-4 w-32 bg-white shadow-2xl rounded-lg z-50 overflow-auto">
+                        <AgentComponent chatId={chatSesionId} />
+                      </div>
+                  ) 
+                }
+                </div>
+                <div>
+                {isComponentVisible ? (
+                                <div
+                                    style={{ backgroundColor: "#3B82F6" }}
+                                    className="p-3 text-white rounded-full w-16 h-16 items-center justify-center shadow-2xl flex  cursor-pointer"
+                                >
+                                    <IoMdClose size={32} />
+                                </div>
+                            ) : (
+                                <div
+                                    style={{ backgroundColor: "#3B82F6" }}
+                                    className="p-3 text-white rounded-full w-16 h-16 items-center justify-center shadow-2xl flex items-center cursor-pointer"
+                                >
+                                    <MdOutlineSupportAgent size={32} />
+                                </div>
+                            )}
 
-                </div>
-                <div className="side-panel-component  mt-4 mr-10 flex flex-row justify-end items-end h-full ">
-                 <AgentComponent chatId={chatSesionId} />
               </div>
-                </>
-              ) : (
-                <div
-                  style={{ backgroundColor: "#3B82F6" }}
-                  className="relative justify-end items-end p-3 text-white rounded-full shadow-2xl flex items-center hover:scale-105 hover:filter transition duration-300 ease-in-out hover z-50 cursor-pointer"
-                  onClick={() => handleButtonClick('start')}
-                >
-                  <MdOutlineSupportAgent size={32} />
-                </div>
-              )
-            }
-            {/* {isComponentVisible && (
-              <div className="side-panel-component  mt-4 mr-10 flex flex-row justify-end items-end h-full ">
-                {/* The component to be displayed */}
-                {/* <AgentComponent chatId={chatSesionId} />
-              </div> */}
-            {/* )} */} 
+            </div>
 
           </div>
-
         </div>
       )}
     </>
