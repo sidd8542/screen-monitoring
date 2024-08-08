@@ -1,13 +1,13 @@
-import { createStore, combineReducers } from 'redux';
-import screenShareReducer from './screenShareReducer';
+import { configureStore } from '@reduxjs/toolkit';
+import streamReducer from './streamSlice';
 
-const rootReducer = combineReducers({
-    screenShare: screenShareReducer,
+const store:any = configureStore({
+    reducer: {
+        stream: streamReducer,
+    },
 });
 
-const store = createStore(rootReducer);
-
-export type RootState = ReturnType<typeof rootReducer>;
+export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 export default store;

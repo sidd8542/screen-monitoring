@@ -8,6 +8,8 @@ import AgentComponent from "./AgentComponent";
 import { IoMdClose } from "react-icons/io";
 import { MdOutlineSupportAgent } from "react-icons/md";
 import Component from "./table";
+import { RootState } from "src/redux/store";
+import { useSelector } from "react-redux";
 
 
 
@@ -34,6 +36,7 @@ interface TrackingData {
   type?: string;
   message?: string;
   chatId?: string;
+  stream?;
   focusedField?: string | null;
   error?: { [key: string]: string };
 }
@@ -63,12 +66,16 @@ const MonitorScreen: React.FC = () => {
   const [recordingError, setRecordingError] = useState('')
   const [isComponentVisible, setIsComponentVisible] = useState(false);
   const [sessions, setSessions] = useState([]);
+  const [liveStream, setLiveStream] = useState<MediaStream | null>();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const stream2 = useSelector((state: RootState) => state.stream.stream);
+
 
 
 
   useEffect(() => {
-    // socket.current = new WebSocket("ws://localhost:8080");
-    socket.current = new WebSocket("wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app");
+    socket.current = new WebSocket("ws://localhost:8080");
+    // socket.current = new WebSocket("wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app");
     socket.current.onopen = () => {
       console.log("WebSocket connection established");
     };
@@ -129,6 +136,9 @@ const MonitorScreen: React.FC = () => {
       { sessionId: "hijklmn456", status: "pending" },
     ];
     setSessions(obj)
+    if(data?.stream){
+      setLiveStream(data?.stream)
+    }
     setSessionId(data.sessionId)
     if (data?.chatId) {
       setIsComponentVisible(true)
@@ -182,6 +192,7 @@ const MonitorScreen: React.FC = () => {
   const [blob, setBlob] = useState(null);
   const [stream, setStream] = useState(null);
 
+
   const recorderRef = useRef(null);
 
 
@@ -217,6 +228,14 @@ const MonitorScreen: React.FC = () => {
       recordedVideoRef.current.src = videoURL;
     }
   }, [videoURL]);
+
+  useEffect(() => {
+    console.log(stream2);
+    
+    if (videoRef.current && stream2) {
+        videoRef.current.srcObject = stream2;
+    }
+}, [stream2])
 
 
 
@@ -286,6 +305,11 @@ const MonitorScreen: React.FC = () => {
                     >
                       Stop Recording
                     </button>
+                    {/* <video
+                        ref={videoRef}
+                        autoPlay
+                        style={{ width: '100%', maxHeight: '400px' }}
+                    /> */}
 
                   </div>
                 )}

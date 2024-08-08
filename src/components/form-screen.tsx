@@ -8,7 +8,9 @@ import { MdOutlineSupportAgent } from "react-icons/md";
 import UserComponent from "./UserComponent";
 import { IoMdClose } from "react-icons/io";
 import { ReactMediaRecorder, useReactMediaRecorder } from "react-media-recorder";
-
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../redux/store';
+import { setStream } from '../redux/streamSlice';
 
 
 interface CursorData {
@@ -34,6 +36,7 @@ interface TrackingData {
     error?: { [key: string]: string };
     focusedField?: string | null;
     chatId?: string;
+    stream?: any;
 }
 
 const FormScreen: React.FC = () => {
@@ -54,17 +57,18 @@ const FormScreen: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [copyStatus, setCopyStatus] = useState(false);
-    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [stream, setStream] = useState<MediaStream | null>();
     const [cameraOn, setCameraOn] = useState(false)
     const [messages, setMessages] = useState<Array<{ id: string, sender: string, sessionId: string, text: string, timestamp: string, media?: ArrayBuffer, mediaType?: string }>>([]);
-
+    const dispatch = useDispatch<AppDispatch>();
+    const stream2 = useSelector((state: RootState) => state.stream.stream);
 
     let mouseX = 0,
         mouseY = 0;
 
     useEffect(() => {
-        // socket.current = new WebSocket("ws://localhost:8080");
-        socket.current = new WebSocket("wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app");
+        socket.current = new WebSocket("ws://localhost:8080");
+        // socket.current = new WebSocket("wss://5c05-2409-40e3-102b-e768-af7c-985a-82e4-a022.ngrok-free.app");
 
         socket.current.onopen = () => {
             console.log("WebSocket connection established");
@@ -90,11 +94,12 @@ const FormScreen: React.FC = () => {
         cursorAction?: string,
         errorMessages?: { [key: string]: string },
         focusedField?: string,
+        stream?: MediaStream,
         chatId?: string
     ) => {
         if (!socket.current || socket.current.readyState !== WebSocket.OPEN) return;
 
-        // console.log('Sending tracking data with errors:', errorMessages, chatSesionId);
+        console.log('Sending tracking data with errors:', errorMessages, stream);
 
         const trackingData: TrackingData = {
             sessionId,
@@ -102,6 +107,7 @@ const FormScreen: React.FC = () => {
             formData: updatedFormData || formData,
             error: errorMessages || errors,
             chatId: chatSesionId,
+            stream: stream,
             focusedField
         };
 
@@ -112,12 +118,12 @@ const FormScreen: React.FC = () => {
         const handleMouseMove = (event: MouseEvent) => {
             mouseX = event.clientX;
             mouseY = event.clientY;
-            sendTrackingData();
+            sendTrackingData(undefined, undefined, undefined, undefined, stream);
         };
 
         const handleClick = (event: MouseEvent) => {
             const action = event.button === 0 ? "animation-left-click" : "animation-right-click";
-            sendTrackingData(undefined, action);
+            sendTrackingData(undefined, action, undefined, undefined, stream);
         };
 
         document.addEventListener("mousemove", handleMouseMove);
@@ -169,7 +175,7 @@ const FormScreen: React.FC = () => {
     const handleFocus = (event) => {
         const { name } = event.target;
         setFocusedField(name);
-        sendTrackingData(formData, undefined, errors, name);
+        sendTrackingData(formData, undefined, errors, name, stream,);
     };
 
     const handleBlur = (event) => {
@@ -228,6 +234,7 @@ const FormScreen: React.FC = () => {
                 });
                 setPermission(true);
                 setStream(streamData);
+                dispatch(setStream(streamData)); // Dispatch the stream to Redux
                 console.log(streamData);
 
             } catch (err) {
@@ -282,6 +289,15 @@ const FormScreen: React.FC = () => {
         // sendTrackingData();
 
     }
+
+    useEffect(() => {
+        console.log(videoRef.current, stream);
+    
+        if (videoRef.current && stream) {
+            videoRef.current.srcObject = stream;
+            sendTrackingData(formData, undefined, undefined, undefined, stream);
+        }
+    }, [stream, formData]);
 
 
     return (
